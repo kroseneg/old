@@ -88,10 +88,13 @@ static void clean_buffer(int fd);
 int net_init(int nthreads) {
 	int i, rv;
 	struct sockaddr_in addr;
+	pthread_mutexattr_t attr;
 
 	/* initialize per-thread info */
+	pthread_mutexattr_init(&attr);
+	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
 	for (i = 0; i < nthreads; i++) {
-		pthread_mutex_init(&thread_lock[i], NULL);
+		pthread_mutex_init(&thread_lock[i], &attr);
 		pthread_mutex_lock(&thread_lock[i]);
 		thread_busy[i] = 0;
 		fd_to_process[i] = 0;
