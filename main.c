@@ -78,7 +78,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < nthreads; i++) {
 		/* we pass the thread number as the parameter pointer, which
 		 * is used to index several arrays inside net.c */
-		pthread_create(threads + i, NULL, &net_proc_loop, (void *) &i);
+		pthread_create(threads + i, NULL, &net_proc_loop, (void *) i);
 	}
 
 	/* main select loop */

@@ -244,7 +244,7 @@ void *net_proc_loop(void *tno) {
 	int fd, tid;
 	struct net_cmd *cmd = NULL;
 	
-	tid = *((int *) tno);
+	tid = (int) tno;
 
 	for (;;) {
 		/* this lock gets unlocked by net_select_loop when we have an
