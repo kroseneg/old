@@ -268,11 +268,11 @@ void *net_proc_loop(void *tno) {
 		}
 		
 end_loop:
-		/* mark the thread idle */
-		thread_busy[tid] = 0;
-
 		/* mark the fd idle */
 		fd_busy[fd] = 0;
+
+		/* mark the thread idle */
+		thread_busy[tid] = 0;
 	}
 	return NULL;
 }
