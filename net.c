@@ -355,6 +355,7 @@ static struct net_cmd *net_get_cmd(int fd) {
 		//printf("VER: %d, LEN: %d\n", cmd->ver, cmd->len);
 		//printf("<<< %hhu %hhu %hhu %hhu\n", b->tmp[0], b->tmp[1], b->tmp[2], b->tmp[3]);
 		if (unlikely(cmd->ver != 1 || cmd->len > MAX_PAYLOAD)) {
+			free(cmd);
 			clean_buffer(fd);
 			net_close(fd);
 			return NULL;
