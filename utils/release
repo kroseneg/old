@@ -11,8 +11,9 @@ fi
 OLDREL=$1
 NEWREL=$2
 
-TARBALL="$PKG-$NEWREL.tar.gz"
-RELDIR="../$PKG-$NEWREL"
+TARGZBALL="$PKG-$NEWREL.tar.gz"
+TARBZBALL="$PKG-$NEWREL.tar.bz2"
+RELDIR="../$NEWREL"
 
 if [ -d $RELDIR ]; then
 	echo "$RELDIR already exists!"
@@ -24,7 +25,7 @@ mkdir $RELDIR > /dev/null 2> /dev/null
 
 echo "* darcs dist"
 darcs dist -d $PKG-$NEWREL
-mv $TARBALL $RELDIR
+mv $TARGZBALL $RELDIR
 
 echo "* darcs changes"
 darcs changes --from-tag $OLDREL > $RELDIR/Changelog-$NEWREL
@@ -34,5 +35,8 @@ darcs diff -u --from-tag $OLDREL > $RELDIR/$PKG-$NEWREL.patch
 
 echo "* unpack"
 cd $RELDIR
-tar -zxf $TARBALL
+tar -zxf $TARGZBALL
+
+echo "* tar.bz2"
+tar -cjf $TARBZBALL $PKG-$NEWREL
 
