@@ -13,7 +13,7 @@ struct wqentry *wq_add(struct wqentry *wq, int fd) {
 	new = (struct wqentry *) malloc(sizeof(struct wqentry));
 	new->fd = fd;
 	new->next = NULL;
-	
+
 	/* if wq is NULL, it means it's empty, so we just replace it with our
 	 * new one */
 	if (wq == NULL) {
@@ -22,7 +22,7 @@ struct wqentry *wq_add(struct wqentry *wq, int fd) {
 		/* go to the last one */
 		for(aux = wq; aux->next != NULL; aux = aux->next)
 			;
-		
+
 		aux->next = new;
 	}
 	return wq;
@@ -32,7 +32,7 @@ struct wqentry *wq_add(struct wqentry *wq, int fd) {
 int wq_del(struct wqentry *wq, int fd) {
 	struct wqentry *p, *prev;
 	prev = NULL;
-	
+
 	/* go through the list looking */
 	for(p = wq; p != NULL; p = p->next) {
 		if (p->fd == fd) {

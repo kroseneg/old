@@ -35,7 +35,7 @@ unsigned int hash(char *s)
 {
 	unsigned int h;
 	unsigned char *p;
-	
+
 	h = 0;
 	for ( p = (unsigned char *)s; *p != '\0'; p++) {
 		h = HASH_MULTIPLIER * h + *p;
@@ -56,7 +56,7 @@ void hash_unlock_chain(char *objname) {
 	h = hash(objname);
 	pthread_mutex_unlock(&hash_lock[h]);
 }
-		
+
 
 /* from now on is just boring hash manipulation functions */
 /* TODO: support multiple hash tables */
@@ -96,7 +96,7 @@ int hash_del(char *objname)
 	int h;
 	int rv = 0;
 	struct hentry *p = NULL, *prev = NULL;
-	
+
 	h = hash(objname);
 
 	for (p = hash_table[h]; p != NULL; p = p->next) {

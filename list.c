@@ -8,7 +8,7 @@
 
 struct list *list_add(struct list *head, char *name) {
 	struct list *l;
-	
+
 	l = (struct list *) malloc(sizeof(struct list));
 	l->len = strlen(name) + 1;
 	l->name = (char *) malloc(l->len);
@@ -45,7 +45,7 @@ struct list *list_remove(struct list *head, char *name) {
 
 struct list *list_lookup(struct list *head, char *name) {
 	struct list *p;
-	
+
 	for (p = head; p != NULL; p = p->next)
 		if (strncmp(name, p->name, p->len) == 0)
 			return p;

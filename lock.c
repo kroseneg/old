@@ -15,7 +15,7 @@ int lock_acquire(char *s, int fd) {
 	struct hentry *h;
 
 	h = hash_lookup(s, 1);
-	
+
 	if (h->locked == 1) {
 		h->wq = wq_add(h->wq, fd);
 		rv = 0;
@@ -53,9 +53,9 @@ int lock_trylock(char *s, int fd) {
 int lock_release(char *s) {
 	int rv;
 	struct hentry *h;
-	
+
 	h = hash_lookup(s, 0);
-	
+
 	if (h) {
 		h->locked = 0;
 		rv = h->fd;
@@ -67,7 +67,7 @@ int lock_release(char *s) {
 	} else {
 		rv = 0;
 	}
-	
+
 	return rv;
 }
 
@@ -75,7 +75,7 @@ int lock_release(char *s) {
 int lock_set_fd(char *s, int fd) {
 	int rv;
 	struct hentry *h;
-	
+
 	h = hash_lookup(s, 0);
 
 	if (h) {

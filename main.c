@@ -1,6 +1,6 @@
-/* 
+/*
  * Open Lock Daemon
- * 
+ *
  * Alberto Bertogli (albertogli@telpin.com.ar), 2003
  */
 
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 	if (!net_init(nthreads)) {
 		exit(1);
 	}
-	
+
 	/* create the threads */
 	threads = malloc(nthreads * sizeof(pthread_t));
 	for (i = 0; i < nthreads; i++) {
@@ -83,12 +83,12 @@ int main(int argc, char **argv)
 
 	/* main select loop */
 	net_select_loop(nthreads);
-	
+
 	/* wait for threads to complete */
 	for (i = 0; i < nthreads; i++) {
 		pthread_join(*(threads + i), NULL);
 	}
-	
+
 	return 0;
 }
 
