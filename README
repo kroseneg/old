@@ -27,9 +27,9 @@ anyway all the basic functions are there and it seems to be working pretty
 solid and quite usable. Check the TODO list for more details.
 
 It doesn't perform bad, it makes around 1200 (lock A; unlock A) operations per
-second on a Pentium II 400Mhz, and about 5400 on a Pentium IV 2Ghz. It's also
-quite small, the compiled binary is about 14k and the memory footprint about
-300k (depending on the usage, the number of threads, and the amount of
+second on a Pentium II 400Mhz, and about 7850 on a Pentium IV 2.8Ghz. It's
+also quite small, the compiled binary is about 10k and the memory footprint
+about 300k (depending on the usage, the number of threads, and the amount of
 simultaneous locks held). Paralell tests are coherent with those numbers,
 reproducing them here would be too much.
 
