@@ -14,6 +14,8 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
+#include <sched.h>
 
 #include "wqueue.h"
 #include "hash.h"
