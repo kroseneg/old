@@ -1,0 +1,151 @@
+
+As of version 0.11, old is multithread.
+
+The way it uses threads is a bit unusual, so this document tries to describe
+it in detail, so readers of the code don't panic when reading it.
+
+
+How it used to work
+-------------------
+
+Before these changes, old had a simple select() loop which waited for
+connections, and then called net_get_cmd() and net_parse() to process input
+from the network.
+
+This was pretty straightforward, simple and fast because, as we are CPU bound,
+there was no need for a more complex scheme which have overhead and offer no
+gain at all.
+
+But there was one drawback tho: if we had more than one processor, old only
+used one because it did all the work in a single loop, and thus we didn't use
+the machine capacity at full scale.
+
+
+How it works now
+----------------
+
+I didn't want to slow down anything or complex the code too much, so I started
+doing something quite simple: split the old loop into three functions:
+net_init() (to initialize basic structures and open the listening fd),
+net_select_loop() (to do select and only select), and net_proc_loop() (to do
+processing of the network i/o).
+
+So now, we call net_init() as expected, then create threads which do
+net_proc_loop() to process, and finally call net_select_loop() to get
+notifiction when i/o is ready, and in turn tell the processing threads that
+they have work to do. So far so good, this is a normal approach to do things.
+
+But now comes the intresting part: how does net_select_loop() tell
+net_proc_loop() it has work to do?
+
+This is a very intresting thing to do, and there are several "classic"
+ways of doing it, the most popular being using wait queues to queue up pending
+work, and conditional variables provided by pthreads.
+
+Those work very well but have some drawbacks, mainly the overhead: because the
+operations we do are really really fast, the overhead of using this approaches
+was too big for my taste.
+
+
+So I came up with a simple and fast way of doing it that has minimal overhead:
+we rely on three arrays: of locks, of integers that represent the file
+descriptor each thread has to process input from, and another one of integers
+used to tell if the thread is busy or idle. The thread number is used to index
+each array, thus we get O(1) access to per-thread data.
+
+Each thread tries to lock its own lock from the array, which is normally
+locked (we will see below why). When it grabs the lock, it gets the fd to do
+i/o from the array and does the work; and finally it marks itself idle and
+goes back to attemp to lock its own lock.
+
+What the select loop does is, of course, call select() on all the file
+descriptors to see when we have data waiting on a given fd, and when that
+happens we look for an idle thread by looping on the busy array, then assign
+the fd to that thread (by using the fd_to_process array), and finally unlock
+the thread's lock, which will wake it up (remember, from the previous
+paragraph, that the thread is idle trying to lock its lock). If all threads
+were busy, it just moves on, which ends up going back to select() which will
+return inmediately because there are fds with data; this is done for
+performance reasons explained below in the 'Scheduler interaction' section.
+
+
+And basically that's it, I don't think the code is _that_ messy (in fact I
+found it quite simple) but I felt the need to write a small document so first
+time readers don't get lost because of this unusual approach.
+
+
+Benefits of the new approach
+----------------------------
+
+The most important thing is the old one-processor case: the added overhead is
+minimum, basically just one lock/unlock call pair, which is unmeasurable in
+normal conditions. I've tested it and compared against the old big select loop
+and we show no slowdown at all.
+
+But furthermore, it allows old to scale pretty well, because now it can use
+more than one processor in an efficient way by being able to process commands
+simultaneously. The rest of the server is already threadsafe so there was no
+need of modifying any code at all, and internal lock contention is expected to
+be pretty small.
+
+
+Scheduler interaction
+---------------------
+
+The nature of the lock server and the way it handles work among threads make
+it quite a case for the system scheduler. This is seen mostly on UP with one
+select thread and one processing thread, and continuously streaming it with
+work.
+
+On the first implementation (0.11) we did a busy loop inside the select
+thread, looking for idle threads; that means the loop only stopped looping
+when it found one. This lead to very bad performance, because the scheduler
+identified the select thread as a cpu-hog (because while looping it would use
+all the available timeslice) and gave it its timeslice all at once, and then
+kept it aside for a while. The problem was that while the loop was running,
+the processing thread couldn't run because the CPU was being held by the
+select thread, so a lot of time was wasted spinning on the busy loop.
+
+To fix this we had several options, most of them combinable.
+
+First of all, we could stop spinning endlessly looking for an idle thread, and
+just keep going like nothing happened and go back to select() (which will
+return inmediately because there is a fd with pending data). This has a small
+advantage that it goes back to the kernel in the select() call, who might or
+might not return inmediately or reschedule, but we are for sure being nicer
+this way.
+
+Another thing was to use priorities to 'lower' the priority of the select
+thread, so it gets shorter timeslices and gives the processing threads more
+chances to run.
+
+And finally, on top of the first one, we could call sched_yield() before
+select() to give up the rest of our timeslice and give time to other threads
+to run. But this has a very big downside, which is that the behaviour is quite
+dependant on the scheduler, and it might decide to put the select thread to
+sleep for a _very_ long time, which ends up in a performance loss.
+
+
+After doing performance testing (using a Linux 2.6 kernel), the combination of
+the first and second approaches showed to perform much better, as expected.
+Also, the third one slowed things down a bit.
+
+
+Recommendations
+---------------
+
+Be aware that, if you start more processing threads than processors you have
+on your system, you'll probably suffer slowdowns due to the completely
+'cpu-bound'iness of the server, so it's not recommended. Also bear in mind
+that there will always be one and only one select thread.
+
+By default we start only one processing thread, but in the future we'll
+probably switch that to as many processing threads as the number of processors
+in the system, but it's not set in stone.
+
+Please let me know if you have any doubts or thoughts about this.
+
+Thanks,
+		Alberto
+
+

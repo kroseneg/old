@@ -1,0 +1,16 @@
+
+To build and install it, just do 'make install'.
+
+It defaults to prefix /usr/local, you can override by setting 'PREFIX' to
+something else, like:
+
+make PREFIX=/usr install
+
+
+You shouldn't need to configure anything, but if you want to, check out the
+file named 'Make.conf' which refers to the building procedure, and
+'include/config.h' which include some constants you can tune to adjust
+internal parameters.
+
+Please also read the README file.
+

@@ -1,0 +1,64 @@
+
+This are small performance notes measured with old 0.12 as the server and
+two clients: oldtest and oldtest2.
+
+oldtest is a very simple example of the library which connects to the given
+server and perform N operations of:
+	lock('ABCD');
+	unlock('ABCD');
+
+A variant of oldtest, called oldtest2, was also used, which locked N different
+objects, and then unlocked them.
+
+
+All tests were repeated a minimum of 5 times (it depends on the test) and an
+average was used, except were noted.
+
+The machine used was a Pentium IV running Linux 2.6.0-test9-bk8.
+
+
+Tests descriptions
+------------------
+
+You can find the scripts used to generate the data, along with the data
+itself, in the 'doc/perf' directory.
+
+test1: Streaming test
+	In this test, we just time oldtest with an increasing number of
+	iterations, going from 1000 to 10000 in increments of 100.
+
+test2: Paralell test
+	It opens two paralell streams of 10000 iterations each using oldtest
+	(just like test1) and times its execution.
+
+test3: Simultaneous locks
+	It locks N objects, going from 1000 to 10000 in increments of 1000,
+	and then unlocks all of them. This stress the locking internals, the
+	hash tables and the structures and show how the server scales with an
+	increasing number of locks being held. This is expected to vary
+	according to the size of the hash table (which is defined in
+	config.h), we used a size of 3000, which is small and unreal, to
+	stress it on purpose, but if you really expect about 10000 locks in
+	paralell constantly, you should consider using at least 4000.
+
+
+Excecution over localhost
+-------------------------
+
+These were performed running the tests and the server in the same machine.
+
+test1:
+	It showed linear scalability (as expected), and performed about 3400
+	operations per second.
+
+test2:
+	Also expected linear scalability, two paralell oldtest 10000 took
+	about the same time as one oldtest 20000, doing about 3200 operations
+	per second.
+
+test3:
+	The stress test performed pretty well consider this is some kind of
+	worst-case scenario and the hash table was pretty small for the use in
+	question. However, it should be better and this is something to look
+	into.
+

@@ -1,0 +1,53 @@
+
+old
+Alberto Bertogli (albertogli@telpin.com.ar)
+-----------------------------------------------
+
+This is a simple lock daemon called 'old' (from Open Lock Daemon).
+
+Its purpose is to provide a central point where to lock resources in a
+distributed environment by using TCP/IP to communicate between clients (the
+apps that want to lock objects) and the server.
+
+Objects are identified by strings, so it's really a general purpose server:
+you can use it to lock from files to pointers, as long as all your apps have a
+coherent object naming scheme.
+
+As I did it just for fun, it's not focused on a special use; also, because
+it's quite simple, it should be able to work on a very wide range of
+situations.
+
+It provides the basic locking primitives (lock, unlock, trylock) and is able
+to cope with network problems like clients crashing while holding locks, or
+lock takeover (called 'adoption').
+
+However, it's still beta because it has not been widely tested and it lacks of
+some functionality like redundancy, failover or distributed locking; but
+anyway all the basic functions are there and it seems to be working pretty
+solid and quite usable. Check the TODO list for more details.
+
+It doesn't perform bad, it makes around 1200 (lock A; unlock A) operations per
+second on a Pentium II 400Mhz, and about 5400 on a Pentium IV 2Ghz. It's also
+quite small, the compiled binary is about 14k and the memory footprint about
+300k (depending on the usage, the number of threads, and the amount of
+simultaneous locks held). Paralell tests are coherent with those numbers,
+reproducing them here would be too much.
+
+
+There are two libraries in the 'lib' directory which provide simple functions
+to talk to the server along with sample code; one in C and one in Python.
+These are documented in doc/libs.
+
+All of this is distributed under the Open Software License, and the libraries
+can be binary linked if you want.
+
+If you're intrested, read the code to find out more; most of the documentation
+is there, and there's a nice description in doc/network and doc/internals.
+There are also manpages for both the lock server and its C library.
+
+
+I'm really intrested to hear if you tested it, so please let me know.
+
+Thanks,
+		Alberto
+

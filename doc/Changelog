@@ -1,0 +1,95 @@
+01 Jan 04 18.50.56 - Alberto <albertogli@telpin.com.ar>
+ * tag: 0.12 tag; from now on I'll start to use Andrew Morton's patch scripts
+	so this is probably the latest changelog in this format.
+
+28 Dec 03 12.34.04 - Alberto <albertogli@telpin.com.ar>
+ * libold.c: Remove bogus comments inside the code, old debugging code, and
+	add a simple header.
+ * doc: Update doc/multithreading and add a brief comment about scheduler
+	interaction.
+ * net.c: Create a new array, fd_busy, to mark when a thread is working on a
+	fd so that we avoid having another thread working on it
+	simultaneously.
+ * oldtest2.c: Add a new oldtest variant, called oldtest2, which locks N
+	different objects simultaneously, and then unlocks them.
+ * doc: Add some performance documentation.
+
+27 Dec 03 19.31.20 - Alberto <albertogli@telpin.com.ar>
+ * utils: add a script to work with Andrew Morton patch scripts
+ * net.c: If select fails, handle the error properly by rebuilding the fd
+	sets; this avoids a bug where a fd is closed while it's still in the
+	active list, making select to fail and fall into an endless loop.
+ * net.c: Use maxfd to limit the number of file descriptors to look when
+	constructing the sets for select(), and simplify the intial
+	construction.
+ * net.c: Replace the busy loop used to look for an idle thread with a normal
+	one, and just go back to select() if there was none.
+ * net.c: Make the select thread renice itself to the lowest priority, to
+	avoid stealing time from workers when looping looking for an idle
+	thread.
+
+23 Dec 03 15.48.29 - Alberto <albertogli@telpin.com.ar>
+ * tag: 0.11 tag
+
+23 Dec 03 12.35.24 - Alberto <albertogli@telpin.com.ar>
+ * doc: wrote manpages for old and libold
+
+23 Dec 03 11.02.58 - Alberto <albertogli@telpin.com.ar>
+ * several: mark some variables and functions as static
+
+22 Dec 03 13.18.18 - Alberto <albertogli@telpin.com.ar>
+ * Makefile: several changes to the building procedure
+
+21 Dec 03 17.49.11 - Alberto <albertogli@telpin.com.ar>
+ * net.c: split net_main_loop() into net_init(), net_select_loop() and
+	net_proc_loop()
+ * main.c: multithread networking
+ * doc: add 'multithread', that documents how multithreading is implemented
+
+10 Dec 03 23.18.12 - Alberto <albertogli@telpin.com.ar>
+ * doc: update license to OSL v2.0
+
+24 Nov 03 01.13.58 - Alberto <albertogli@telpin.com.ar>
+ * readme: OSL means Open _Software_ License, duh!
+
+24 Nov 03 00.59.09 - Alberto <albertogli@telpin.com.ar>
+ * tag: 0.10 tag
+
+23 Nov 03 22.06.37 - Alberto <albertogli@telpin.com.ar>
+ * main.c: detach from the console
+ * make: lib/ now has a Makefile of its own
+ * make: don't relink everytime
+ * stats.c and others: remove stats, they're really useless
+ * doc: add internals and the README file
+ * license: put the license in, OSL
+
+17 Nov 03 20.53.11 - Alberto <albertogli@telpin.com.ar>
+ * net.c: cleanup the orphan objects after a given time
+ * oldlib.py: convert the object to strings, just in case
+ * oldlib.py: include stress testing
+
+17 Nov 03 17.51.15 - Alberto <albertogli@telpin.com.ar>
+ * tag: 0.08 - finally found the source of select() slowliness
+
+14 Nov 03 02.02.08 - Alberto <albertogli@telpin.com.ar>
+ * tag: 0.07 "James Bond" tag - more cleanups in the net code
+
+10 Nov 03 04.51.32 - Alberto <albertogli@telpin.com.ar>
+ * tag: 0.06 tag - mainly cleanups and basic C and python libraries
+
+31 Oct 03 00.42.12 - Alberto <albertogli@telpin.com.ar>
+ * tag: 0.05 tag - we can adopt now
+
+28 Oct 03 01.54.06 - Alberto <albertogli@telpin.com.ar>
+ * tag: 0.04 tag - network is really working, and with basic locking
+
+27 Oct 03 16.22.58 - Alberto <albertogli@telpin.com.ar>
+ * tag: 0.03 tag - network is working (now i need to plug locking in =)
+
+25 Oct 03 20.20.24 - Alberto <albertogli@telpin.com.ar>
+ * tag: 0.02 tag - locking is working
+
+19 Oct 03 14.08.00 - Alberto <albertogli@telpin.com.ar>
+ * tag: 0.01 tag
+
+ 

@@ -1,0 +1,59 @@
+
+This brief document describe some of the inner workings of the server.
+
+
+Mainly, the structure used for locking is a hash table where locked objects
+live.
+
+Atomicity is waranteed by locking a hash chain with hash_lock_chain(). This
+point is quite important because it represents an important choice: having
+more fine grained locking (per object) would mean a lot of code and locking
+overhead in every operation, because we search a lot.
+
+By locking per chain we only take one lock while operating on an object within
+a chain (which shouldn't be long anyways), and as most operations are mainly
+"search and touch" (like locking and unlocking are finding the object inside
+the chain and then modifying its state), lock contention should be pretty low,
+and we gain a lot in simplicity (which translate in less code and more chances
+it can fit into a cache).
+
+Locked objects are repredented by the hentry (from hash entry) structure,
+which consists in the string that identifies the object, its lenght, its
+status (locked or unlocked), the fd who has it locked (if so), and a wait
+queue, which holds all the fds that are waiting for that lock to be unlocked.
+
+So when a lock is released and it has somebody waiting on it, we wake up the
+first fd that sits in the queue and grant him the ownership of the lock.
+
+
+When you lock a file, for instance, in a regular process, and your app dies,
+the kernel knows about it and releases the lock as a part of your process'
+death.
+
+However, over the network is not that easy, because we don't really know for
+sure how a client is dead. So, what we do is enforcing a policy: every client
+that holds a lock must kept the network connection open. When the client dies,
+the connection is closed and we move the lock to a state called 'orphan',
+because it has lost its parent.
+
+Orphans have a lifetime after which they're unlocked; however we want to keep
+them around for sometime because maybe some other client wants to 'adopt' the
+lock, or to give a chance to the app to recover from a simple network error.
+
+This approach is even more useful when you have distributed clients, in that
+case when one server dies the other one marks its locks as orphaned, because
+it doesn't have a connection to the owner, but they're not dead, because the
+owner could come and ask to adopt them back. This is explained in more detail
+in the 'network' file.
+
+Orphans are handled in the networking code, where there is a single list of
+orphaned objects. It relates to the list of opened locks, also handled by the
+networking code, which has a list of which locks are owned by a given fd, so
+when a fd dies, all its owned locks are moved to the orphan list.
+
+An orphan get adopted by just moving it from the orphan list to the fd owned
+list, and setting the fd as the owner in the object's hentry with
+lock_set_fd().
+
+
+

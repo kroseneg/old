@@ -1,0 +1,80 @@
+.TH "libold" 3 "2003-12-23" 
+.SH "NAME"
+libold - A library to interface with old, the Open Lock Daemon
+
+.SH "SYNOPSIS"
+
+.B #include <old.h>
+
+.B #define OLD_PORT
+
+.B int old_connect(
+.BI "char " *host ,
+.BI "int " port);
+
+.B int old_lock(
+.BI "int " fd,
+.BI "char " *s);
+
+.B int old_unlock(
+.BI "int " fd,
+.BI "char " *s);
+
+.B int old_trylock(
+.BI "int " fd,
+.BI "char " *s);
+
+
+.SH "DESCRIPTION"
+The
+.B libold
+library is an interface to
+.BR old ,
+the Open Lock Daemon, which is described in old(1).
+.PP
+It provides an abstract, high level interface to the normal locking operations
+so that any application can use the server without having to worry about the
+underlying layer.
+.SH "FUNCTIONS"
+The functions provided are quite simple and well-known, they refer to the
+normal operations that are performed on locks, and, except for
+.IR old_connect() ,
+all have the same prototype: they receive a file descriptor (fd) which
+identifies a connection with the lock server opened with
+.I old_connect()
+(which is described below), and a string that identifies the resource to
+operate on.
+.PP
+.B old_connect()
+is special because it must be called before any other, and is used to
+establish the network connection with the lock server. It accepts two
+parameters: the first one is a string identifying the host to connect, which
+can be an IP address or the name of the host which will be resolved; and the
+second one is the port to connect to, it should be the same one the server is
+expecting connections. When possible, use the default defined in
+.BR OLD_PORT .
+It returns the connection's file descriptor, or -1 if there was an error.
+.PP
+.B old_lock()
+is used to lock the given resource, and it will block until the lock is
+granted. It returns 1 on success, and -1 if there was a fail in
+delivering the command to the server.
+.PP
+.B old_unlock()
+releases the lock on the given resource. It returns 1 on success, 0 on
+failure (for example if the object wasn't locked in the first place), and -1
+if there was a failure in delivering the command to the server.
+.PP
+.B old_trylock()
+attempts to lock the resource, but does
+.B not
+block. It returns 1 if the object was locked, 0 if not (because it was locked
+and it would block), and -1 if there was a failure in delivering the command
+to the server.
+.SH "SEE ALSO"
+old(1)
+.SH "AUTHOR"
+old was written by Alberto Bertogli (albertogli@telpin.com.ar). The website is
+at http://users.auriga.wearlab.de/~alb/old/
+
+

@@ -1,0 +1,10 @@
+
+* do performance testing over the network
+* do portable orphan timeout (we now depend on linux' select() behaviour)
+* make network send/recv able to work on big endian
+* default the number of threads to the number of cpus
+* a library that is pthread-alike to ease replacing pthreads calls
+* implement redundancy (should be only a couple of hooks in the networking
+	code and new net ops)
+* more documentation
+

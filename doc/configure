@@ -1,0 +1,19 @@
+
+This document describes the tunable options in the include/config.h file for
+the lock daemon.
+
+HLEN		It defines the lenght of the hash table that holds the locked
+		objects; a value of 50 is ok for normal loads, if you have a
+		lot of lock at a time, increase it; if you have very serious
+		memory constraints you can decrease this value.
+
+PORT		It's the TCP port where we listen to network connections, we
+		use 2626 but you can change this value if you want (note that
+		you would have to change the clients too)
+
+MAXCONN		Maximum number of simultaneous network connections
+
+ORPHAN_TIMEOUT	This is the time in seconds after which we unlock the objects
+		that are considered orphans, which means that the connection
+		who locked them was closed (and they were left locked)
+

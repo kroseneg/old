@@ -1,0 +1,4 @@
+
+man2html -r doc/old.1 > ../../web/cur/old/man/man1/old.1.html
+man2html -r doc/libold.3 > ../../web/cur/old/man/man3/libold.3.html
+

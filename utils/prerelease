@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+	echo "Usage: prerelease RELNUM"
+	exit
+fi
+
+echo "Creating the full patch"
+patchdesc $(cat ps/series) > ../old-$1.patch
+echo >> ../old-$1.patch
+echo >> ../old-$1.patch
+combine-series ../old-$1.patch-t1
+cat ../old-$1.patch-t1 >> ../old-$1.patch
+rm ../old-$1.patch-t1
+
+echo "Cleaning up"
+make clean
+
+

@@ -1,0 +1,33 @@
+.TH "old" 1 "2003-12-23"
+.SH "NAME"
+old - Open Lock Daemon
+.SH "SYNOPSIS"
+.B old
+.I [nthreads]
+.SH "DESCRIPTION"
+.B old
+is a simple lock server which provides central point where to lock resources
+in a distributed environment by using TCP/IP to communicate with its clients.
+.PP
+It provides basic locking primitives (lock, unlock and trylock) that handle
+objects identified by strings of any kind, so it's really a general purpose
+server that you can use to lock anything, from files to pointers, as long as
+you name them using a coherent object naming scheme.
+.PP
+The network protocol is quite lightweight and simple, it's documented in the
+source package. There's also a library called libold(3) that provides the
+primitives as simple functions pretty much like pthreads does.
+.SH "OPTIONS"
+.TP
+.B nthreads
+Tell the number of processing threads to start. It defaults to 1, and it
+should be the same number of processors you have on your system. Note that
+there is no point in incresing it more, because old is entirely CPU bound and
+it might even slowdown things.
+.SH "SEE ALSO"
+libold(3)
+.SH "AUTHOR"
+old was written by Alberto Bertogli (albertogli@telpin.com.ar). The website is
+at http://users.auriga.wearlab.de/~alb/old/
+
+

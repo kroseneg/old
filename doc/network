@@ -1,0 +1,170 @@
+
+Introduction
+------------
+
+The networking interface to the locking daemon is really lightweight and
+simple, based on small requests and responses that represent the locking
+primitives.
+
+We use the term 'server' to refer to the locking daemon, and 'client'
+obviously to the apps that use it through the network. All integers that are
+sent over the network are in network byte order.
+
+This document describes version 1 of the protocol.
+
+
+Principles of operation
+-----------------------
+
+The idea is that the client opens a connection to the server to talk to it,
+making requests and waiting for the server to respond.
+
+Note that if a lock is granted, the connection must be kept open in order for
+the server to notice when a client crashed.
+
+When a socket that holds object locks is closed, those locks became "orphans",
+and if they're not "adopted" in a given timeframe by some other client,
+they'll get automatically unlocked.
+
+This is done to be able to support fault tolerance, having two or more servers
+working at the same time holding the same locks but without knowing who owns
+them: if one crashes, the client holding the lock can go to the second server
+and adopt it. The same can go for the clients: if one of the client crashes
+holding a lock, a second one can step up and adopt his locks.
+
+
+The same way as with normal threads, nobody 'owns' a lock, so anybody can
+unlock somebody else's lock; however, when a lock is being held, we do keep
+track of the connection holding it for the reasons specified avobe.
+
+
+The network operations divide between requests and responses, the former being
+sent by the client and the latter by the server.
+
+They can be batched, but they will be processed in order.
+
+If an operation would block (for instance, a lock acquire request), an ACK
+would be sent to mark that the command was received, and when the lock becomes
+available another response would be sent. In the meantime, other commands can
+be sent and will be processed while the blocking operation is pending.
+
+
+Inter-server communication
+--------------------------
+
+In order to support fault tolerance and distributed operation, servers
+communicate throught the network using the same protocol as the client, with
+some additional operations.
+
+All servers are peers, and while here we discuss only with a two-server setup,
+there is no essential difference in using many of them.
+
+For normal operations, server consult each other before taking decisions, like
+granting or releasing locks: this is done using the same commands client do,
+and in fact, for the consulted server, it looks like a normal client and it
+gets processed that way.
+
+This, while it might sound strange, is beautifully simple: a server (let's
+call it S1) acts like another server's (S2) client, consulting it before
+taking a lock, and notifying of the releases. Now, to S2, S1 is just another
+client that acquires and releases locks.
+
+If S1 crashes, its locked objects became orphans, as explained before, in S2,
+where the client can go and adopt them.
+
+Of course, as they are peers, the same goes the other way.
+
+Now, what happens when, after S1 crashed, it comes back again? It sends a SYNC
+command to S2, telling that he wants to syncronize its locks, so S2 gives it a
+list of the objects it has locked and from then on they talk as usual.
+
+
+The main problem is when the communication between servers is lost, but
+neither crash: that way clients can still talk to them, but they can't talk to
+each other. This is worst than both crashing, because it means that two
+clients can grab the same lock. It's also the harder to fix, and this is why
+most fault tolerant things have those weird designs and backend special
+connections.
+
+What we do in this case is called 'The Great Poncio', it means that we rely
+the decision to another program determined (and probably written) by the
+administrator, because he's the one with knowledge about the network layout
+and how to determine the best action course. Pretty much like in the old roman
+ages, it decides whether the server lives, or dies.
+
+
+Protocol specification
+----------------------
+
+The main structure of the command header is:
+
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |Version|    Op. Code   |            Lenght                     |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+
+Overall, the header takes 32 bits: 4 for the version, 8 for the operation
+code, and 20 for the payload lenght.
+
+After the header, a payload of the given lenght follows (and, logically, 0
+lenght means no payload); its content changes according the operation, but in
+most cases refer to a string which identifies the object to block univocally.
+The maximum payload size is (2^20 - 1) = 1048575 bytes = 1 Mb, which is really
+much more than we need.
+
+The following operations are defined:
+
+Name			Code	Description
+REQ_ACQ_LOCK		1	Request to acquire a lock
+REQ_REL_LOCK		2	Request to release a lock
+REQ_TRY_LOCK		3	Request to attempt to acquire a lock
+REQ_PING		4	Ping request
+REQ_ADOPT		5	Request to adopt an orphan lock
+REQ_SYNC		6	Syncronize request for inter-server operation
+
+REP_LOCK_ACQUIRED	128	The lock has been acquired
+REP_LOCK_WBLOCK		129	The operation would block
+REP_LOCK_RELEASED	130	The lock has been released
+REP_PONG		131	Ping response
+REP_ACK			132	Generic acknowledge response
+REP_ERR			133	Generic error response
+REP_SYNC		134	Syncronize reply for inter-server operation
+
+
+For the following operations: 
+	REQ_ACQ_LOCK
+	REQ_REL_LOCK
+	REQ_TRY_LOCK
+	REQ_ADOPT
+	REP_ACK (in response to the four previous requests)
+	REP_ERR (in response to the four previous requests)
+	REP_LOCK_ACQUIRED
+	REP_LOCK_WBLOCK
+	REP_LOCK_RELEASED
+
+the payload is a null-terminated string identifying univocally the object
+involved.
+
+For REQ_SYNC, no payload is used, and REP_SYNC payload contains all the locked
+object's null-terminated strings (ie. "obj 1\0obj 2\0obj3\0").
+
+For REQ_PING the payload can be any arbitrary string that returned untouched
+in REP_SYNC.
+
+
+The possible response to commands are:
+
+Command		Valid responses
+REQ_ACQ_LOCK	REP_ACK, REP_LOCK_ACQUIRED
+REQ_REL_LOCK	REP_LOCK_RELEASED
+REQ_TRY_LOCK	REP_LOCK_ACQUIRED, REP_LOCK_WBLOCK
+REQ_PING	REP_PONG
+REQ_ADOPT	REP_ACK
+REQ_SYNC	REP_SYNC
+
+Note that REP_ERR is always a valid response, and it always indicates an error
+on the request (ie. if you tried to unlock an object that wasn't locked).
+
+
