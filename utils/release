@@ -1,0 +1,38 @@
+#!/bin/bash
+
+PKG=old
+
+if [ "$1" == "" -o "$2" == "" ]; then
+	echo "Use: release OLDREL NEWREL"
+	echo "Run from the repo root"
+	exit
+fi
+
+OLDREL=$1
+NEWREL=$2
+
+TARBALL="$PKG-$NEWREL.tar.gz"
+RELDIR="../$PKG-$NEWREL"
+
+if [ -d $RELDIR ]; then
+	echo "$RELDIR already exists!"
+	exit
+fi
+
+echo "* making $RELDIR"
+mkdir $RELDIR > /dev/null 2> /dev/null
+
+echo "* darcs dist"
+darcs dist -d $PKG-$NEWREL
+mv $TARBALL $RELDIR
+
+echo "* darcs changes"
+darcs changes --from-tag $OLDREL > $RELDIR/Changelog-$NEWREL
+
+echo "* darcs diff"
+darcs diff -u --from-tag $OLDREL > $RELDIR/$PKG-$NEWREL.patch
+
+echo "* unpack"
+cd $RELDIR
+tar -zxf $TARBALL
+
