@@ -34,9 +34,9 @@ lib_install:
 
 # manpages
 man_install:
-	install -g root -o root -m 0644 -d $(PREFIX)/man/man1
+	install -g root -o root -m 0755 -d $(PREFIX)/man/man1
 	install -g root -o root -m 0644 doc/old.1 $(PREFIX)/man/man1/
-	install -g root -o root -m 0644 -d $(PREFIX)/man/man3
+	install -g root -o root -m 0755 -d $(PREFIX)/man/man3
 	install -g root -o root -m 0644 doc/libold.3 $(PREFIX)/man/man3/
 
 cleanobj:
