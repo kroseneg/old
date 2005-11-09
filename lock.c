@@ -59,11 +59,17 @@ int lock_release(char *s) {
 	if (h) {
 		h->locked = 0;
 		rv = h->fd;
-		if (h->wq != NULL)
-			net_wakeup(h);
-		else
-			/* if noone is waiting on this, destroy it */
+		if (h->wq == NULL) {
 			hash_del(s);
+		} else {
+			/* It's possible that net_wakeup tried to wake
+			 * everybody but for some reason (network failure,
+			 * etc.) there was no answer. In that case, we need to
+			 * free the entry since there are no more waiters. */
+			if (net_wakeup(h) == 0) {
+				hash_del(s);
+			}
+		}
 	} else {
 		rv = 0;
 	}

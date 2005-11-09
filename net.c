@@ -303,6 +303,7 @@ static int net_send_cmd(int fd, unsigned int op, char *payload, int len) {
 	header[3] = ulen & 0x0000FF;
 
 	//printf(">>> %hhu %hhu %hhu %hhu\n", header[0], header[1], header[2], header[3]);
+	//printf(">>> v:%d l:%u op:%u\n\n", ver, ulen, op);
 
 	if (unlikely(write(fd, header, 4) != 4)) {
 		clean_buffer(fd);
@@ -358,6 +359,8 @@ static struct net_cmd *net_get_cmd(int fd) {
 
 		//printf("VER: %d, LEN: %d\n", cmd->ver, cmd->len);
 		//printf("<<< %hhu %hhu %hhu %hhu\n", b->tmp[0], b->tmp[1], b->tmp[2], b->tmp[3]);
+		//printf("<<< v:%d l:%u op:%u\n\n", cmd->ver, cmd->len, cmd->op);
+
 		if (unlikely(cmd->ver != 1 || cmd->len > MAX_PAYLOAD)) {
 			free(cmd);
 			clean_buffer(fd);
@@ -540,43 +543,60 @@ return_error:
 
 /* wakes up the first fd waiting on the given hash entry */
 int net_wakeup(struct hentry *h) {
-	int fd;
+	int fd, rv;
 	struct wqentry *p;
 
-	/* get the fd from the first of the list */
-	fd = h->wq->fd;
-	active_fd[fd] = 1;
+	do {
+		/* get the fd from the first of the list */
+		fd = h->wq->fd;
+		active_fd[fd] = 1;
 
-	/* then remove it from the waitqueue */
-	p = h->wq->next;
-	free(h->wq);
-	h->wq = p;
-	h->fd = fd;
+		/* then remove it from the waitqueue */
+		p = h->wq->next;
+		free(h->wq);
+		h->wq = p;
+		h->fd = fd;
 
-	/* of course, mark it locked */
-	h->locked = 1;
+		rv = net_send_cmd(fd, REP_LOCK_ACQUIRED, h->objname, h->len);
+		if (!rv) {
+			/* the send failed; clean everything up and retry with
+			 * the next entry */
+			clean_buffer(fd);
+			net_close(fd);
+			perror("send failed:");
+			continue;
+		}
 
-	/* add the open lock; the caller will take care to remove from the
-	 * other queue */
-	olocks[fd] = list_add(olocks[fd], h->objname);
+		/* of course, mark it locked */
+		h->locked = 1;
 
-	/* and send the reply */
-	net_send_cmd(fd, REP_LOCK_ACQUIRED, h->objname, h->len);
-	return 1;
+		/* add the open lock; the caller will take care to remove from the
+		 * other queue */
+		olocks[fd] = list_add(olocks[fd], h->objname);
+		return 1;
+
+	} while (p != NULL);
+
+	return 0;
 }
 
 
 /* clean the orphan lists by releasing the locks - the code is taken from the
  * command parser */
 static void clean_orphans() {
-	struct list *p;
+	struct list *p, *next;
 
-	for (p = orphans; p != NULL; p = p->next) {
+	p = orphans;
+	while (p != NULL) {
+		next = p->next;
+
 		hash_lock_chain(p->name);
 		lock_release(p->name);
 		hash_unlock_chain(p->name);
 		/* this goes down here, otherwise we would free(p->name) */
 		orphans = list_remove(orphans, p->name);
+
+		p = next;
 	}
 }
 
