@@ -19,8 +19,18 @@ struct list *list_add(struct list *head, char *name) {
 }
 
 struct list *list_mult_add(struct list *head, struct list *new) {
-	new->next = head;
-	return new;
+	struct list *p;
+
+	/* append the new list at the end of the current one */
+	if (head == NULL) {
+		head = new;
+	} else {
+		for (p = head; p->next != NULL; p = p->next)
+			;
+		p->next = new;
+	}
+
+	return head;
 }
 
 struct list *list_remove(struct list *head, char *name) {
