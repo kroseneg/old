@@ -4,13 +4,13 @@ Open Software License version 2.0 as obtained from www.opensource.org (and
 included here-in for easy reference) (that license itself is copyrighted by
 Larry Rosen).
 
-Note that the "Original Work" that this license covers is only the library
-itself and the client, along with the sample callbacks. Thus just the act of
-linking/importing this library into another program does NOT in itself make
-that program considered a derivative work of this Original Work.
+Note that the "Original Work" that this license covers is only the server and
+the library. The act of linking/importing the library into another program
+does NOT in itself make that program considered a derivative work of this
+Original Work.
 
 		Alberto Bertogli
-		20 May 2003
+		15 Jul 2006
 
 -------------------------------------------------------------------------
 

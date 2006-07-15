@@ -38,8 +38,9 @@ There are two libraries in the 'lib' directory which provide simple functions
 to talk to the server along with sample code; one in C and one in Python.
 These are documented in doc/libs.
 
-All of this is distributed under the Open Software License, and the libraries
-can be binary linked if you want.
+All of this is distributed under the Open Software License (which you can find
+in doc/license), and the libraries can be source or binary linked to whatever
+you want. If you're in doubt, please read the license or just ask me.
 
 If you're intrested, read the code to find out more; most of the documentation
 is there, and there's a nice description in doc/network and doc/internals.
