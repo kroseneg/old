@@ -549,13 +549,18 @@ int net_wakeup(struct hentry *h) {
 	do {
 		/* get the fd from the first of the list */
 		fd = h->wq->fd;
-		active_fd[fd] = 1;
 
 		/* then remove it from the waitqueue */
 		p = h->wq->next;
 		free(h->wq);
 		h->wq = p;
 		h->fd = fd;
+
+		if (active_fd[fd] == 0) {
+			/* it got bored and quit while it was waiting, so we
+			 * just skip it and move on */
+			continue;
+		}
 
 		rv = net_send_cmd(fd, REP_LOCK_ACQUIRED, h->objname, h->len);
 		if (!rv) {
