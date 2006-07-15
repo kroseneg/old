@@ -559,11 +559,8 @@ int net_wakeup(struct hentry *h) {
 
 		rv = net_send_cmd(fd, REP_LOCK_ACQUIRED, h->objname, h->len);
 		if (!rv) {
-			/* the send failed; clean everything up and retry with
-			 * the next entry */
-			clean_buffer(fd);
-			net_close(fd);
-			perror("send failed:");
+			/* the send failed, retry with the next entry */
+			perror("send failed");
 			continue;
 		}
 
