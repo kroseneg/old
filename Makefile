@@ -15,7 +15,7 @@ pre:
 
 install: all lib_install man_install
 	install -g root -o root -m 0755 $(BUILD)/old $(PREFIX)/bin
-	
+
 
 $(BUILD)/old: ${OBJS}
 	$(CC) $(CFLAGS) -o $(BUILD)/old $(OBJS) $(LIBS)
