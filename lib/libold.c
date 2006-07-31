@@ -7,17 +7,51 @@
  */
 
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <sys/types.h>
+
+#ifdef WIN32
+  #include <windows.h>
+  #include <winsock2.h>
+  #define SOCKET_LEVEL IPPROTO_TCP
+  #define OPTVAL_CAST (const char *)
+  typedef BOOL optval_t;
+  /* read() and write() don't work well in Windows, so #define them based on
+   * send()/recv() */
+  #define read(fd, buf, count) recv(fd, buf, count, 0)
+  #define write(fd, buf, count) send(fd, buf, count, 0)
+#else
+  #include <sys/socket.h>
+  #include <netdb.h>
+  #include <netinet/in.h>
+  #include <netinet/tcp.h>
+  #define SOCKET_LEVEL SOL_TCP
+  #define OPTVAL_CAST (void *)
+  typedef int optval_t;
+#endif
 
 #include "compiler.h"
 #include "old.h"
+
+
+#ifdef WIN32
+static int network_initialized = 0;
+static int net_init() {
+	if (network_initialized)
+		return 0;
+	network_initialized = 1;
+	WSADATA wsaData;
+	return WSAStartup(MAKEWORD(2, 0), &wsaData);
+}
+#else
+static int net_init() {
+	return 0;
+}
+#endif
+
+
 
 /* FIXME: these two are only for little endian, make them generic */
 int send_cmd(int fd, unsigned int op, char *payload, int len) {
@@ -164,10 +198,13 @@ int old_trylock(int fd, char *s) {
 }
 
 int old_connect(char *host, int port) {
-	int fd;
-	int rv;
+	int fd, i;
+	optval_t rv;
 	struct hostent *hinfo;
 	struct sockaddr_in sa;
+
+	if (net_init())
+		return -1;
 
 	hinfo = gethostbyname(host);
 	if (hinfo == NULL) {
@@ -180,11 +217,11 @@ int old_connect(char *host, int port) {
 
 	fd = socket(PF_INET, SOCK_STREAM, 0);
 
-	rv = 1;
-	if (setsockopt(fd, SOL_TCP, TCP_NODELAY, &rv, sizeof(rv)) < 0 ) {
+	i = setsockopt(fd, SOCKET_LEVEL, TCP_NODELAY, OPTVAL_CAST &rv,
+			sizeof(rv));
+	if (i < 0 ) {
 		return -1;
 	}
-
 
 	rv = connect(fd, (struct sockaddr *) &sa, sizeof(sa));
 	if (rv != 0) {
