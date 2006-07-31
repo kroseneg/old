@@ -23,7 +23,7 @@ void sighandler (int s) {
 
 int main(int argc, char **argv)
 {
-	int i, nthreads;
+	unsigned long i, nthreads;
 	pid_t pid;
 	pthread_t *threads;
 

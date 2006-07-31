@@ -244,10 +244,11 @@ rebuild:
 
 /* processing loop, it's started always as a thread; see doc/multithread */
 void *net_proc_loop(void *tno) {
-	int fd, tid;
+	int fd;
+	unsigned long tid;
 	struct net_cmd *cmd = NULL;
 
-	tid = (int) tno;
+	tid = (unsigned long) tno;
 
 	for (;;) {
 		/* this lock gets unlocked by net_select_loop when we have an
