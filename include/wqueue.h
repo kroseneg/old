@@ -10,7 +10,7 @@ struct wqentry {
 };
 
 struct wqentry *wq_add(struct wqentry *wq, int fd);
-int wq_del(struct wqentry *wq, int fd);
+struct wqentry *wq_del(struct wqentry *wq, int fd);
 
 
 #endif

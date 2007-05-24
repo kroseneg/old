@@ -50,6 +50,9 @@ static struct part_buf bufs[MAXCONN];
 /* owned locks per fd */
 static struct list *olocks[MAXCONN];
 
+/* queued locks per fd */
+static struct list *qlocks[MAXCONN];
+
 
 /*
  * thread structures
@@ -436,12 +439,29 @@ static int net_close(int fd) {
 	/* move open locks to the orphan list */
 	if (olocks[fd] != NULL) {
 		/* first, mark its open locks as orphans */
-		for (p = olocks[fd]; p != NULL; p = p->next)
+		for (p = olocks[fd]; p != NULL; p = p->next) {
 			lock_set_fd(p->name, -1);
+		}
 
 		/* and then move them to the orphan list */
 		orphans = list_mult_add(orphans, olocks[fd]);
 		olocks[fd] = NULL;
+	}
+
+	/* remove ourselves from the waiting queues */
+	if (qlocks[fd] != NULL) {
+		p = qlocks[fd];
+		while (p != NULL) {
+			/* FIXME: we don't take locks over p->name, so this is
+			 * not really threadsafe. Taking locks is tricky
+			 * because we could be called with some p->name
+			 * locked. */
+			lock_remove_fd(p->name, fd);
+
+			/* fragile, because list_remove() frees p->name */
+			p = list_remove(p, p->name);
+		}
+		qlocks[fd] = NULL;
 	}
 
 	return close(fd);
@@ -471,6 +491,7 @@ static int net_parse(int fd, struct net_cmd *cmd) {
 				olocks[fd] = list_add(olocks[fd], data);
 				send_op = REP_LOCK_ACQUIRED;
 			} else {
+				qlocks[fd] = list_add(qlocks[fd], data);
 				send_op = REP_ACK;
 			}
 			hash_unlock_chain(data);
@@ -576,6 +597,10 @@ int net_wakeup(struct hentry *h) {
 		/* add the open lock; the caller will take care to remove from the
 		 * other queue */
 		olocks[fd] = list_add(olocks[fd], h->objname);
+
+		/* and remove the entry in the fd's queued locks */
+		qlocks[fd] = list_remove(qlocks[fd], h->objname);
+
 		return 1;
 
 	} while (p != NULL);

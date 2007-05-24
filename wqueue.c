@@ -29,7 +29,7 @@ struct wqentry *wq_add(struct wqentry *wq, int fd) {
 }
 
 /* removes a given fd from the waitqueue */
-int wq_del(struct wqentry *wq, int fd) {
+struct wqentry *wq_del(struct wqentry *wq, int fd) {
 	struct wqentry *p, *prev;
 	prev = NULL;
 
@@ -43,13 +43,13 @@ int wq_del(struct wqentry *wq, int fd) {
 				prev->next = p->next;
 			}
 			free(p);
-			return 1;
+			return wq;
 		}
 		prev = p;
 	}
 
-	/* we couldn't find a match!!! */
-	return 0;
+	/* we couldn't find a match, return the same queue */
+	return wq;
 }
 
 

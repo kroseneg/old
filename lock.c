@@ -94,3 +94,16 @@ int lock_set_fd(char *s, int fd) {
 	return rv;
 }
 
+/* remove a given fd from the lock's waitqueue */
+int lock_remove_fd(char *s, int fd) {
+	struct hentry *h;
+
+	h = hash_lookup(s, 0);
+	if (h == NULL)
+		return -1;
+
+	h->wq = wq_del(h->wq, fd);
+	return 1;
+}
+
+
